@@ -1,8 +1,26 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BriefcaseBusiness, Camera, Mail, MapPin, Phone, Share2, Video } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  Camera,
+  CheckCircle2,
+  CircleDollarSign,
+  Headphones,
+  Mail,
+  MapPin,
+  Phone,
+  Rocket,
+  Settings,
+  Share2,
+  ShieldCheck,
+  Smile,
+  Users,
+  Video,
+  Wrench,
+} from "lucide-react";
 
 const services = [
   {
@@ -44,6 +62,17 @@ const projects = [
   { title: "Educonnect", image: "/assets/Product-Images/educonnect-product-img.png" },
 ];
 
+const guarantees = [
+  { title: "Non-Disclosure Agreement (NDA) that will ensure privacy", Icon: ShieldCheck, tone: "blue" },
+  { title: "Affordable App Development", Icon: CircleDollarSign, tone: "purple" },
+  { title: "Expert Development Team", Icon: Users, tone: "orange" },
+  { title: "Fast Mobile App Delivery", Icon: Rocket, tone: "green" },
+  { title: "User-Friendly UI/UX", Icon: Smile, tone: "pink" },
+  { title: "Seamless Performance", Icon: Settings, tone: "red" },
+  { title: "Quick Response Support", Icon: Headphones, tone: "lime" },
+  { title: "Custom-Tailored Solutions", Icon: Wrench, tone: "mint" },
+];
+
 const stats = [
   { value: "500+", label: "Successful Projects" },
   { value: "500+", label: "Happy Clients" },
@@ -65,6 +94,22 @@ const socialLinks = [
   { label: "Instagram", Icon: Camera, href: "https://www.instagram.com/analogueitsolutions/" },
   { label: "LinkedIn", Icon: BriefcaseBusiness, href: "https://www.linkedin.com/company/analogueitsolutions/" },
   { label: "YouTube", Icon: Video, href: "https://www.youtube.com/@AnalogueITSolutions" },
+];
+
+const heroSocialLinks = [
+  { label: "Facebook", image: "/assets/home/link1.svg", href: "https://www.facebook.com/analogueitsolutions" },
+  { label: "Instagram", image: "/assets/home/link2.svg", href: "https://www.instagram.com/analogueitsolutions/" },
+  { label: "X", image: "/assets/home/link3.svg", href: "https://x.com/AnalogueIt" },
+  { label: "LinkedIn", image: "/assets/home/link4.svg", href: "https://www.linkedin.com/company/analogueitsolutions/" },
+  { label: "WhatsApp", image: "/assets/home/link5.svg", href: "https://api.whatsapp.com/send/?phone=+918919088163" },
+  { label: "YouTube", image: "/assets/home/link6.svg", href: "https://www.youtube.com/@AnalogueITSolutions" },
+];
+
+const trustLogos = [
+  { src: "/assets/home/ellipse1.png", alt: "TGNPDCL" },
+  { src: "/assets/home/ellipse2.png", alt: "GHMC" },
+  { src: "/assets/home/ellipse3.png", alt: "TGSPDCL" },
+  { src: "/assets/home/ellipse4.png", alt: "GWMC" },
 ];
 
 const process = [
@@ -96,15 +141,55 @@ const process = [
 ];
 
 function ConsultationForm({ compact = false }) {
+  const router = useRouter();
   const [submitted, setSubmitted] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [formError, setFormError] = useState("");
 
-  function handleSubmit(event) {
+  function handlePhoneChange(event) {
+    const digitsOnly = event.target.value.replace(/\D/g, "").slice(0, 10);
+    setPhone(digitsOnly);
+    setPhoneError(digitsOnly.length === 10 || digitsOnly.length === 0 ? "" : "Phone number must be exactly 10 digits.");
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault();
+    setFormError("");
+
+    if (phone.length !== 10) {
+      setPhoneError("Phone number must be exactly 10 digits.");
+      return;
+    }
+
     setSubmitted(true);
-    window.setTimeout(() => {
-      event.currentTarget.reset();
+
+    const formData = new FormData(event.currentTarget);
+    const payload = {
+      name: formData.get("name"),
+      phone,
+      email: formData.get("email"),
+      service: formData.get("service"),
+      budget: formData.get("budget"),
+      description: formData.get("description"),
+    };
+
+    try {
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error("Lead submission failed");
+      }
+
+      router.push("/thank-you");
+    } catch (error) {
+      setFormError("Something went wrong. Please try again in a moment.");
       setSubmitted(false);
-    }, 2600);
+    }
   }
 
   return (
@@ -115,7 +200,19 @@ function ConsultationForm({ compact = false }) {
       </label>
       <label>
         <span>Phone*</span>
-        <input type="tel" name="phone" placeholder="+91 00000 00000" required />
+        <input
+          type="tel"
+          name="phone"
+          placeholder="10 digit phone number"
+          inputMode="numeric"
+          pattern="[0-9]{10}"
+          maxLength={10}
+          value={phone}
+          onChange={handlePhoneChange}
+          aria-invalid={phoneError ? "true" : "false"}
+          required
+        />
+        {phoneError ? <small className="field-error">{phoneError}</small> : null}
       </label>
       <label>
         <span>Email*</span>
@@ -142,8 +239,13 @@ function ConsultationForm({ compact = false }) {
           <option>INR 5 Lakhs and above</option>
         </select>
       </label>
+      <label>
+        <span>Description*</span>
+        <textarea name="description" placeholder="Tell us briefly about your project" rows={compact ? 3 : 4} required />
+      </label>
+      {formError ? <small className="form-error">{formError}</small> : null}
       <button type="submit" disabled={submitted}>
-        {submitted ? "Thank you! We will contact you soon." : "Submit"}
+        {submitted ? "Submitting..." : "Submit"}
       </button>
     </form>
   );
@@ -172,7 +274,7 @@ export default function Home() {
       <main id="top">
         <section className="hero">
           <div className="hero-content">
-            <p className="eyebrow">Mobile App Digital Website Development Marketing Development</p>
+            {/* <p className="eyebrow">Mobile App Digital Website Development Marketing Development</p> */}
             <h1>Best Mobile App Development Company in Hyderabad</h1>
             <p className="hero-copy">
               Analogue IT Solutions is your trusted mobile app development company in Hyderabad, serving clients worldwide.
@@ -182,6 +284,29 @@ export default function Home() {
             <div className="hero-actions">
               <a className="primary-btn" href="#contact">Get Free Quote</a>
               <a className="secondary-btn" href="https://www.analogueitsolutions.com/" target="_blank" rel="noreferrer">Visit Website</a>
+            </div>
+            <div className="hero-trust-card" aria-label="Government trust and social media links">
+              <div className="trust-logo-row">
+                {trustLogos.map((logo) => (
+                  <div className="trust-logo" key={logo.alt}>
+                    <Image src={logo.src} alt={logo.alt} width={96} height={96} />
+                  </div>
+                ))}
+              </div>
+              <p className="trusted-line">
+                <CheckCircle2 size={28} />
+                Trusted by Government of Telangana
+              </p>
+              <div className="hero-follow-row">
+                <strong>Follow us on</strong>
+                <div className="hero-social-links">
+                  {heroSocialLinks.map(({ label, image, href }) => (
+                    <a key={label} href={href} target="_blank" rel="noreferrer" aria-label={label}>
+                      <Image src={image} alt="" width={38} height={38} />
+                    </a>
+                  ))}
+                </div>
+              </div>
             </div>
             <dl className="hero-stats">
               <div>
@@ -247,6 +372,31 @@ export default function Home() {
                   <Image src={project.image} alt={`${project.title} project`} width={560} height={420} />
                 </div>
                 <h3>{project.title}</h3>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="guarantees" aria-label="Analogue guarantees">
+          <div className="guarantee-copy">
+            <h2>Analogue IT Solutions - Best Mobile App Development Services in Hyderabad</h2>
+            <p>
+              Analogue has achieved the name and fame of being the best mobile app development company in Hyderabad,
+              by organising and formulating a client-centric process. Our teams collaborate, brainstorm, and get the
+              leading strategies for planning and creating a mobile application.
+            </p>
+            <p>
+              We are dedicated to crafting mobile applications that are engaging, intuitive, well-structured, innovative,
+              and distinctive. Our goal is to capture the essence and ambiance of every business through essential design
+              patterns and sophisticated style elements.
+            </p>
+          </div>
+          <h3>Analogue Guarantees the following :</h3>
+          <div className="guarantee-grid">
+            {guarantees.map(({ title, Icon, tone }) => (
+              <article className={`guarantee-pill ${tone}`} key={title}>
+                <Icon size={26} strokeWidth={2.7} />
+                <span>{title}</span>
               </article>
             ))}
           </div>
